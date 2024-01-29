@@ -1,27 +1,19 @@
-# Fetching the latest node image on apline linux
-FROM node:alpine AS builder
+# Use an official Python runtime as a parent image
+FROM tiangolo/uvicorn-gunicorn-fastapi:python3.8
 
-# Declaring env
-ENV NODE_ENV production
-
-# Setting up the work directory
+# Set the working directory to /app
 WORKDIR /app
 
-# Installing dependencies
-COPY ./package.json ./
-RUN npm install
+# Copy the current directory contents into the container at /app
+COPY ./app /app
 
-# Copying all the files in our project
-COPY . .
+# Install any needed packages specified in requirements.txt
+RUN pip install --upgrade pip
+COPY ./requirements.txt /app/requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
 
-# Building our application
-RUN npm run build
+# Make port 80 available to the world outside this container
+EXPOSE 80
 
-# Fetching the latest nginx image
-FROM nginx
-
-# Copying built assets from builder
-COPY --from=builder /app/build /usr/share/nginx/html
-
-# Copying our nginx.conf
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+# Run app.py when the container launches
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "80"]
